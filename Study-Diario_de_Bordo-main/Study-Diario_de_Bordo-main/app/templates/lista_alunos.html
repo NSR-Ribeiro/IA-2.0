@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Alunos</title>
+    <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css')}}">
+
+</head>
+<body>
+    <div class="tabs">
+        <div class="left">
+            <form action="{{ url_for('area_prof', nome=nome)}}" method="POST">
+                <input type="hidden" name="nome" value="{{ nome }}">
+                <button type="submit">Voltar para a página do instrutor</button>
+            </form>
+            <button class="active">Acesse a lista de alunos</button>
+            <button onclick="showPopup('Por favor preencha o campo de busca e clique em buscar')">Diário de Bordo</button>
+            <form action="{{ url_for('listar_notas', nome=nome)}}" method="POST">
+                <input type="hidden" name="nome" value="{{ nome }}">
+                <button type="submit">Acesse a lista de notas</button>
+            </form>
+
+        </div>
+        <div class="right">
+            <button onclick="location.href='/'">Logout</button>
+        </div>
+    </div>
+    <h1>Lista de Alunos</h1>
+    <hr>
+    <div class="search-container">
+        <form action="{{ url_for('diario_por_ra', nome=nome )}}" method="POST" class="search-form">
+            <label for="ra">Buscar Diário por RA:</label>
+            <div class="input-button-container">
+                <input type="text" id="ra" name="ra" required>
+                <input type="hidden" id="nome" name="nome">
+                <button type="submit" class="search-button">
+                    ➔ <!-- You can replace this with an icon if needed -->
+                </button>
+            </div>
+            {% if mensagem %}
+            <div>
+                {{mensagem}}
+            </div>
+            {% endif %}
+        </form>
+    </div>
+    <div id="table"></div>
+    <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
+    <script>
+        new gridjs.Grid({
+          columns: [
+            { id: 'ra', name: 'RA' },
+            { id: 'nome', name: 'Nome' },
+            { id: 'tempo_de_estudo', name: 'Tempo de Estudo', sort: false },
+            { id: 'renda_media_salarial', name: 'Renda Media Salarial', sort: false },
+          ],
+          data: [
+            {% for aluno in alunos %}
+              [
+                '{{ aluno.ra }}',
+                '{{ aluno.nome }}',
+                '{{ aluno.tempo_de_estudo }}',
+                '{{ aluno.renda_media_salarial }}'
+              ],
+            {% endfor %}
+          ],
+          search: true,
+          sort: true,
+          pagination: true,
+        }).render(document.getElementById('table'));
+    </script>
+        <div id="popup" class="popup"></div>
+        <script>
+            function showPopup(message) {
+                var popup = document.getElementById('popup');
+                popup.textContent = message;
+                popup.classList.add('active');
+                setTimeout(function() {
+                    popup.classList.remove('active');
+                }, 3000);
+            }
+        </script>
+</body>
+</html>
