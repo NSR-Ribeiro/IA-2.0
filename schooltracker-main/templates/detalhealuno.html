@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes do Aluno{% endblock %}
+{% block body_class %}body-detalhe{% endblock %}
+
+{% block content %}
+<div class="container espacamento">
+    <div class="row justify-content-center align-items-center" style="margin-top: 8%; margin-bottom: 70px;">
+        <div class="col-md-10 caixa-forms">
+            <h2 class="text-center">{{ aluno.nome }}</h2>
+            <p><strong>RA:</strong> {{ aluno.ra }}</p>
+            <button id="toggleMic" class="btn btn-warning btn-block">
+                <i id="micIcon" class="fas fa-microphone-slash"></i> Ativar Microfone
+            </button>
+            <div id="micMessage" class="text-center" style="display: none; color: green; font-weight: bold;" class="blinking">Pode falar!</div>
+            <form action="{{ url_for('adicionar_diario', ra=aluno.ra) }}" method="POST">
+                <div class="form-group">
+                    <label for="texto">Escreva seu diário de bordo:</label>
+                    <textarea id="texto" name="texto" class="form-control" rows="5" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-success btn-block">Adicionar Diário</button>
+            </form>
+
+            <br>
+
+            <ul class="list-group">
+                {% if diariobordo %}
+                    {% for diario in diariobordo %}
+                        <li class="list-group-item">
+                            <strong>{{ diario.datahora.strftime('%d/%m/%Y %H:%M') }}</strong>: <br> {{ diario.texto }}
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <li class="list-group-item">Nenhuma entrada registrada.</li>
+                {% endif %}
+            </ul>
+
+            <br>
+
+            <div class="text-center">
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">Voltar</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes blinking {
+        0% { opacity: 1; }
+        50% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+
+    .blinking {
+        animation: blinking 1s infinite;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    const toggleMicButton = document.getElementById('toggleMic');
+    const micMessage = document.getElementById('micMessage');
+    const micIcon = document.getElementById('micIcon');
+    const textoArea = document.getElementById('texto');
+    let micEnabled = false;
+    let mediaRecorder;
+    let audioChunks = [];
+
+    // Permissão para acessar o microfone
+    async function initMicrophone() {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = event => {
+            audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            await transcribeAudio(audioBlob);
+            audioChunks = [];
+        };
+    }
+
+    async function transcribeAudio(audioBlob) {
+        const reader = new FileReader();
+        reader.onload = async () => {
+            const base64AudioMessage = reader.result.split(',')[1];
+
+            const response = await axios.post('YOUR_GOOGLE_CLOUD_ENDPOINT', {
+                audio: {
+                    content: base64AudioMessage
+                },
+                config: {
+                    encoding: 'LINEAR16',
+                    sampleRateHertz: 16000,
+                    languageCode: 'pt-BR'
+                }
+            });
+
+            const transcript = response.data.results[0].alternatives[0].transcript;
+            textoArea.value += (textoArea.value ? ' ' : '') + transcript;
+            console.log('Transcrição:', transcript);
+        };
+        reader.readAsDataURL(audioBlob);
+    }
+
+    toggleMicButton.addEventListener('click', async () => {
+        micEnabled = !micEnabled;
+
+        if (micEnabled) {
+            await initMicrophone();
+            toggleMicButton.textContent = 'Desativar Microfone';
+            micIcon.classList.remove('fa-microphone-slash');
+            micIcon.classList.add('fa-microphone');
+            toggleMicButton.classList.remove('btn-warning');
+            toggleMicButton.classList.add('btn-danger');
+            micMessage.style.display = 'block';
+            micMessage.classList.add('blinking');
+            mediaRecorder.start();
+        } else {
+            toggleMicButton.textContent = 'Ativar Microfone';
+            micIcon.classList.remove('fa-microphone');
+            micIcon.classList.add('fa-microphone-slash');
+            toggleMicButton.classList.remove('btn-danger');
+            toggleMicButton.classList.add('btn-warning');
+            micMessage.style.display = 'none';
+            micMessage.classList.remove('blinking');
+            mediaRecorder.stop();
+        }
+    });
+</script>
+{% endblock %}
