@@ -1,0 +1,5 @@
+endpoint: diario-de-bordo.c3ayeocwg2hk.us-east-1.rds.amazonaws.com
+
+
+Certificado: /etc/letsencrypt/live/semanaawsnsr.ddns.net/fullchain.pem
+Chave: /etc/letsencrypt/live/semanaawsnsr.ddns.net/privkey.pem

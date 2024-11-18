@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Cadastro de Pacientes{% endblock %}
+
+{% block content %}
+<h1>Cadastro de Pacientes</h1>
+<form action="/salvar_paciente" method="POST">
+
+    <!-- Seção Dados Pessoais e Documentos -->
+    <div class="section">
+        <h2>Dados Pessoais e Documentos</h2>
+
+        <label for="CPF">CPF:</label><br>
+        <input type="text" id="CPF" name="CPF" required placeholder="000.000.000-00" oninput="formatarCPF(this)" onblur="buscarPessoaPorCPF(this.value)"><br>
+        
+
+        <div id="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 999;">
+            <div style="background: white; margin: 15% auto; padding: 20px; width: 300px; text-align: center; border-radius: 5px;">
+                <p>CPF já cadastrado. Deseja preencher os dados?</p>
+                <button id="btn-sim">Sim</button>
+                <button id="btn-nao">Não</button>
+            </div>
+        </div>
+
+        <label for="Nome">Nome:</label><br>
+        <input type="text" id="Nome" name="Nome" required style="width: 100%;"><br>
+
+        
+        <label for="RG">RG:</label><br>
+        <input type="text" id="RG" name="RG" required><br>
+
+        <label for="Data_Nascimento">Data de Nascimento:</label><br>
+        <input type="date" id="Data_Nascimento" name="Data_Nascimento" required style="width: 100%;"><br>
+    </div>
+
+    <!-- Seção Dados de Endereço -->
+    <div class="section">
+        <h2>Endereço</h2>
+
+        <label for="CEP">CEP:</label><br>
+        <input type="text" id="CEP" name="CEP" required placeholder="00.000-000" pattern="\d{2}\.\d{3}-\d{3}" style="width: 20%;"><br>
+
+        <label for="UF">UF:</label><br>
+        <input type="text" id="UF" name="UF" maxlength="2" required style="width: 50%;"><br>
+
+        <label for="Cidade">Cidade:</label><br>
+        <input type="text" id="Cidade" name="Cidade" required style="width: 50%;"><br>
+
+        <label for="Endereco">Endereço:</label><br>
+        <input type="text" id="Endereco" name="Endereco" required style="width: 100%;"><br>
+
+        <label for="Complemento">Complemento:</label><br>
+        <input type="text" id="Complemento" name="Complemento" style="width: 100%;"><br>
+
+        <label for="numero">Número:</label><br>
+        <input type="text" id="numero" name="numero" style="width: 50%;"><br>
+    </div>
+
+    <!-- Seção Contato -->
+    <div class="section">
+        <h2>Contato</h2>
+        <label for="Telefone_01">Telefone 01:</label><br>
+        <input type="text" id="Telefone_01" name="Telefone_01" required style="width: 20%;"><br>
+
+        <label for="Telefone_02">Telefone 02:</label><br>
+        <input type="text" id="Telefone_02" name="Telefone_02" style="width: 20%;"><br>
+
+        <label for="Telefone_03">Telefone 03:</label><br>
+        <input type="text" id="Telefone_03" name="Telefone_03" style="width: 20%;"><br>
+    </div>
+
+    <!-- Seção Convênio -->
+    <div class="section">
+        <h2>Convênio</h2>
+        <label for="possui_convenio">Possui convênio?</label><br>
+        <select id="possui_convenio" name="possui_convenio" required onchange="toggleConvenio(this.value)" style="width: 100%;">
+            <option value="" disabled selected>-- Selecione --</option>
+            <option value="sim">Sim</option>
+            <option value="nao">Não</option>
+        </select><br>
+
+        <div id="convenio_section" style="display:none;">
+            <label for="convenio">Selecione o Convênio:</label><br>
+            <select id="convenio" name="convenio" style="width: 100%;">
+                <option value="" disabled selected>-- Selecione um convênio --</option>
+                {% for convenio in lista_convenios %}
+                    <option value="{{ convenio.id }}">{{ convenio.descricao }}</option>
+                {% endfor %}
+            </select><br>
+
+            <!-- Campo Tipo de Convênio -->
+            <label for="tipoconvenio">Tipo de Convênio:</label><br>
+            <select id="tipoconvenio" name="tipoconvenio" style="width: 100%;">
+                <option value="" disabled selected>-- Selecione o tipo de convênio --</option>
+                <option value="individual">Individual</option>
+                <option value="coletivo">Coletivo</option>
+                <option value="publico">Público</option>
+            </select><br>
+        </div>
+    </div>
+
+    <!-- Botão Salvar -->
+    <button type="submit" style="width: 100%;">Salvar</button>
+</form>
+{% if mensagem %}
+    <h4 class="text-danger text-center">{{ mensagem }}</h4>
+{% endif %}
+
+<script>
+    function toggleConvenio(value) {
+        const convenioSection = document.getElementById('convenio_section');
+        const convenioSelect = document.getElementById('convenio');
+        const tipoConvenioSelect = document.getElementById('tipoconvenio');
+
+        if (value === 'sim') {
+            convenioSection.style.display = 'block';
+            convenioSelect.setAttribute('required', 'true');
+            tipoConvenioSelect.setAttribute('required', 'true');
+        } else {
+            convenioSection.style.display = 'none';
+            convenioSelect.removeAttribute('required');
+            tipoConvenioSelect.removeAttribute('required');
+        }
+    }
+
+    function formatarCPF(cpfField) {
+        // Remove caracteres não numéricos
+        let cpf = cpfField.value.replace(/\D/g, '');
+
+        // Adiciona a formatação
+        if (cpf.length <= 11) {
+            cpf = cpf.replace(/(\d{3})(\d)/, '$1.$2'); // Adiciona o primeiro ponto
+            cpf = cpf.replace(/(\d{3})(\d)/, '$1.$2'); // Adiciona o segundo ponto
+            cpf = cpf.replace(/(\d{3})(\d{1,2})$/, '$1-$2'); // Adiciona o traço
+        }
+
+        cpfField.value = cpf; // Atualiza o campo com o CPF formatado
+    }
+
+    function buscarPessoaPorCPF(cpf) {
+    // Remove caracteres especiais do CPF
+    cpf = cpf.replace(/\D/g, '');
+
+    if (cpf.length === 11) {
+        fetch(`/buscar_pessoa/${cpf}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data) {
+                    // Exibe o modal informando que o CPF já está cadastrado
+                    document.getElementById('modal').style.display = 'flex';
+                    
+                        // Configura o botão "Sim"
+                        document.getElementById('btn-sim').onclick = () => {
+                        preencherDadosCallback(); // Preenche os dados
+                        document.getElementById('modal').style.display = 'none'; // Fecha o modal
+                    };
+
+                    // Configura o botão "Não"
+                    document.getElementById('btn-nao').onclick = () => {
+                        limparCPF(); // Limpa o campo CPF
+                        document.getElementById('modal').style.display = 'none'; // Fecha o modal
+                    };
+
+                    // Função para preencher dados
+                    const preencherDadosCallback = () => {
+                        document.getElementById('Nome').value = data.nome;
+                        document.getElementById('RG').value = data.rg;
+                        document.getElementById('Data_Nascimento').value = data.data_nas;
+                        document.getElementById('CEP').value = data.cep;
+                        document.getElementById('UF').value = data.uf;
+                        document.getElementById('Cidade').value = data.cidade;
+                        document.getElementById('Endereco').value = data.endereco;
+                        document.getElementById('Complemento').value = data.complemento;
+                        document.getElementById('numero').value = data.numero;
+                        document.getElementById('Telefone_01').value = data.telefone_01;
+                        document.getElementById('Telefone_02').value = data.telefone_02;
+                        document.getElementById('Telefone_03').value = data.telefone_03;
+                    };
+
+                    
+                } else {
+                    alert("CPF não encontrado.");
+                }
+            })
+            .catch(error => console.error('Erro ao buscar dados:', error));
+    }
+}
+
+function limparCPF() {
+    document.getElementById('CPF').value = ''; // Limpa o campo CPF
+}
+
+
+</script>
+{% endblock %}
